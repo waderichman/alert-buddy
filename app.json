@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "AlertBuddy",
+    "slug": "alertbuddy",
+    "scheme": "alertbuddy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#07111f"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.irene.alertbuddy",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "AlertBuddy uses notifications to send fast geopolitical and breaking-news alerts."
+      }
+    },
+    "android": {
+      "package": "com.irene.alertbuddy"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
