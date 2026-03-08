@@ -1,4 +1,3 @@
-import { mockHeadlines, mockTopics } from "@/lib/mock-data";
 import { Headline, Topic } from "@/lib/types";
 
 type FeedResponse = {
@@ -25,33 +24,17 @@ async function fetchJson<T>(path: string): Promise<T> {
 
 export async function fetchTopics(): Promise<Topic[]> {
   if (!API_BASE_URL) {
-    return mockTopics;
+    throw new Error("Missing API base URL");
   }
 
-  try {
-    const response = await fetchJson<{ items: Topic[] }>("/api/topics");
-    return response.items;
-  } catch {
-    return mockTopics;
-  }
+  const response = await fetchJson<{ items: Topic[] }>("/api/topics");
+  return response.items;
 }
 
 export async function fetchFeed(): Promise<FeedResponse> {
   if (!API_BASE_URL) {
-    return {
-      items: mockHeadlines,
-      lastUpdatedLabel: "Using sample data",
-      dataSourceLabel: "Sample feed"
-    };
+    throw new Error("Missing API base URL");
   }
 
-  try {
-    return await fetchJson<FeedResponse>("/api/feed");
-  } catch {
-    return {
-      items: mockHeadlines,
-      lastUpdatedLabel: "Offline fallback",
-      dataSourceLabel: "Sample feed"
-    };
-  }
+  return await fetchJson<FeedResponse>("/api/feed");
 }

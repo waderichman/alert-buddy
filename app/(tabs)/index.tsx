@@ -14,6 +14,7 @@ export default function FeedScreen() {
   const feedStatus = useAppStore((state) => state.feedStatus);
   const lastUpdatedLabel = useAppStore((state) => state.lastUpdatedLabel);
   const dataSourceLabel = useAppStore((state) => state.dataSourceLabel);
+  const feedError = useAppStore((state) => state.feedError);
 
   const filteredHeadlines = !selectedTopicIds.length
     ? headlines
@@ -93,9 +94,13 @@ export default function FeedScreen() {
         renderItem={({ item }) => <HeadlineCard headline={item} />}
         ListEmptyComponent={
           <View className="rounded-[24px] border border-dashed border-line px-5 py-8">
-            <Text className="text-base font-semibold text-white">No items match this filter.</Text>
+            <Text className="text-base font-semibold text-white">
+              {feedStatus === "error" ? "Live feed unavailable." : "No items match this filter."}
+            </Text>
             <Text className="mt-2 text-sm leading-6 text-mist">
-              Expand your topic set or reset the filter to view the full stream.
+              {feedStatus === "error"
+                ? feedError || "Check the backend, API key, or network reachability, then refresh."
+                : "Expand your topic set or reset the filter to view the full stream."}
             </Text>
           </View>
         }

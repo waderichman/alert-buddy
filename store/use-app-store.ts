@@ -1,13 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import {
-  defaultAlertSettings,
-  mockHeadlines,
-  mockOfferings,
-  mockTopics
-} from "@/lib/mock-data";
 import { fetchFeed, fetchTopics } from "@/lib/api";
+import { defaultAlertSettings, defaultOfferings } from "@/lib/catalog";
 import { configureRevenueCat } from "@/lib/revenuecat";
 import {
   AlertSettings,
@@ -29,6 +24,7 @@ type AppState = {
   feedStatus: FeedStatus;
   lastUpdatedLabel: string;
   dataSourceLabel: string;
+  feedError: string | null;
   bootstrap: () => Promise<void>;
   refreshFeed: () => Promise<void>;
   toggleTopic: (topicId: string, nextValue?: boolean) => void;
@@ -39,19 +35,20 @@ type AppState = {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      topics: mockTopics,
-      headlines: mockHeadlines,
-      selectedTopicIds: ["ukraine", "middle-east", "us-politics"],
+      topics: [],
+      headlines: [],
+      selectedTopicIds: [],
       alertSettings: defaultAlertSettings,
-      offerings: mockOfferings,
+      offerings: defaultOfferings,
       subscription: {
         isPro: false,
         entitlementId: null
       },
       hasBootstrapped: false,
       feedStatus: "idle",
-      lastUpdatedLabel: "Using sample data",
-      dataSourceLabel: "Sample feed",
+      lastUpdatedLabel: "Not loaded",
+      dataSourceLabel: "Waiting for backend",
+      feedError: null,
       bootstrap: async () => {
         if (get().hasBootstrapped) {
           return;
@@ -65,23 +62,26 @@ export const useAppStore = create<AppState>()(
         });
       },
       refreshFeed: async () => {
-        set({ feedStatus: "loading" });
+        set({ feedStatus: "loading", feedError: null });
 
         try {
           const [topics, feed] = await Promise.all([fetchTopics(), fetchFeed()]);
 
-          set((state) => ({
-            topics: topics.length ? topics : state.topics,
-            headlines: feed.items.length ? feed.items : state.headlines,
+          set({
+            topics,
+            headlines: feed.items,
             feedStatus: "success",
             lastUpdatedLabel: feed.lastUpdatedLabel,
-            dataSourceLabel: feed.dataSourceLabel
-          }));
-        } catch {
+            dataSourceLabel: feed.dataSourceLabel,
+            feedError: null
+          });
+        } catch (error) {
           set({
             feedStatus: "error",
-            lastUpdatedLabel: "Offline fallback",
-            dataSourceLabel: "Sample feed"
+            lastUpdatedLabel: "Refresh failed",
+            dataSourceLabel: "Backend unavailable",
+            feedError: error instanceof Error ? error.message : "Unknown error",
+            headlines: []
           });
         }
       },
@@ -113,15 +113,24 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "alertbuddy-store",
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState) => {
+        const state = persistedState as AppState;
+
+        return {
+          selectedTopicIds: state?.selectedTopicIds ?? [],
+          alertSettings: state?.alertSettings ?? defaultAlertSettings,
+          subscription: state?.subscription ?? {
+            isPro: false,
+            entitlementId: null
+          }
+        };
+      },
       partialize: (state) => ({
         selectedTopicIds: state.selectedTopicIds,
         alertSettings: state.alertSettings,
-        subscription: state.subscription,
-        topics: state.topics,
-        headlines: state.headlines,
-        lastUpdatedLabel: state.lastUpdatedLabel,
-        dataSourceLabel: state.dataSourceLabel
+        subscription: state.subscription
       })
     }
   )
